@@ -71,7 +71,10 @@ function signIn() {
         return codeView(u.$id, em);
       }
       u.prefs.avatar ? home(u) : avatarView(u);
-    } catch (err) { msg("Wrong email or password."); ev.target.disabled = false; }
+    } catch (err) {
+      msg(err.code === 401 ? "Wrong email or password." : "Problem: " + (err.message || "unknown error"));
+      ev.target.disabled = false;
+    }
   };
 }
 
@@ -91,7 +94,7 @@ function signUp() {
       await sendCode(u.$id, em);
       codeView(u.$id, em);
     } catch (err) {
-      msg(err.code === 409 ? "That email already has an account. Sign in instead." : "Could not create the account. Check your details and try again.");
+      msg(err.code === 409 ? "That email already has an account. Sign in instead." : "Problem: " + (err.message || "unknown error"));
       ev.target.disabled = false;
     }
   };
