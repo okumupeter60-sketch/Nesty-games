@@ -18,6 +18,9 @@ function tone(f, d = .1, type = "sine", v = .15, t = 0) {
 const sfx = {
   tap: k => sfxOn && tone(k === "O" ? 390 : 520, .1, "triangle"),
   click: () => sfxOn && tone(300, .05, "square", .06),
+  hit: () => sfxOn && tone(150, .08, "sawtooth", .1),
+  jump: () => sfxOn && tone(600, .1, "sine", .08),
+  shot: () => sfxOn && tone(900, .06, "square", .06),
   win: () => sfxOn && [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, "triangle", .15, i * .12)),
   lose: () => sfxOn && [392, 330, 262].forEach((f, i) => tone(f, .22, "sawtooth", .08, i * .15)),
   draw: () => sfxOn && [440, 440].forEach((f, i) => tone(f, .15, "sine", .12, i * .18))
@@ -46,6 +49,12 @@ function bindTg() {
     b.setAttribute("aria-pressed", b.dataset.t === "sfx" ? sfxOn : musicOn);
   });
 }
+
+document.addEventListener("visibilitychange", () => {
+  if (!ac) return;
+  if (document.hidden) { beat(false); ac.suspend(); } else { ac.resume(); beat(inGame); }
+});
+addEventListener("pagehide", () => { beat(false); if (ac) ac.suspend(); });
 
 /* ---------- Helpers ---------- */
 function view(h) { clearInterval(tm); app.innerHTML = h; scrollTo(0, 0); }
@@ -171,24 +180,27 @@ function resetView(userId, secret) {
 
 /* ---------- Home ---------- */
 const CATALOG = [
-  ["tictactoe", "Tic-Tac-Toe", "⭕", "vs computer or a friend"],
+  ["stick", "Stick Fight", "🥷", "10 levels, 3 difficulties"],
+  ["tictactoe", "Tic-Tac-Toe", "⭕", "Computer on 3 levels, or 2 players"],
+  ["memory", "Memory Match", "🧠", "3 difficulties"],
   ["checkers", "Checkers", "♟️", "Coming soon"],
   ["sudoku", "Sudoku", "🔢", "Coming soon"],
-  ["cube", "Rubik’s Cube", "🧊", "Coming soon"],
-  ["stick", "Stick Fight", "🥷", "Coming soon"]
+  ["cube", "Rubik’s Cube", "🧊", "Coming soon"]
 ];
+let current = null;
+function leave() { if (current && current.stop) current.stop(); current = null; inGame = false; beat(false); }
 function home(u) {
-  inGame = false; beat(false);
-  view(`<div class="top"><div class="me"><span class="av">${esc(u.prefs.avatar || "🎮")}</span><span>${esc(u.name)}</span></div>${tg()}</div>
-  <h1>Pick a game</h1>
-  <div class="grid">${CATALOG.map(([id, n, i, s]) => `<button class="game" data-g="${id}" ${window.Games && Games[id] ? "" : "disabled"}><i>${i}</i>${n}<small>${s}</small></button>`).join("")}</div>`);
+  leave();
+  view(`<div class="top"><div class="brand">Gold Arcade</div><div class="tools">${tg()}</div></div>
+  <h1>Pick a game</h1><p class="sub">Tap a game to play.</p>
+  <div class="list">${CATALOG.map(([id, n, i, s]) => `<button class="row" data-g="${id}" ${window.Games && Games[id] ? "" : "disabled"}><i>${i}</i><span><b>${n}</b><small>${s}</small></span></button>`).join("")}</div>`);
   bindTg();
   document.querySelectorAll("[data-g]").forEach(b => b.onclick = () => { sfx.click(); openGame(b.dataset.g, u); });
 }
 function openGame(id, u) {
   const g = Games[id];
-  inGame = true;
-  view(`<div class="bar"><button id="bk" class="link">← Home</button><b>${g.name}</b>${tg()}</div><div id="g"></div>`);
+  leave(); current = g; inGame = true;
+  view(`<div class="top"><button id="bk" class="link">← Home</button><div class="tools">${tg()}</div></div><h1>${g.name}</h1><div id="g"></div>`);
   bindTg(); beat(true);
   $("#bk").onclick = () => { sfx.click(); home(u); };
   g.start($("#g"), { sfx, user: u });
