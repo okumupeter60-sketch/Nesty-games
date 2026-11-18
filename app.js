@@ -179,11 +179,10 @@ const CATALOG = [
 ];
 function home(u) {
   inGame = false; beat(false);
-  view(`<div class="top"><div class="me"><span class="av">${esc(u.prefs.avatar || "🎮")}</span><span>${esc(u.name)}</span></div>${tg()}<button id="out" class="ic" title="Sign out">⎋</button></div>
+  view(`<div class="top"><div class="me"><span class="av">${esc(u.prefs.avatar || "🎮")}</span><span>${esc(u.name)}</span></div>${tg()}</div>
   <h1>Pick a game</h1>
   <div class="grid">${CATALOG.map(([id, n, i, s]) => `<button class="game" data-g="${id}" ${window.Games && Games[id] ? "" : "disabled"}><i>${i}</i>${n}<small>${s}</small></button>`).join("")}</div>`);
   bindTg();
-  $("#out").onclick = async () => { try { await account.deleteSession("current"); } catch (e) {} signIn(); };
   document.querySelectorAll("[data-g]").forEach(b => b.onclick = () => { sfx.click(); openGame(b.dataset.g, u); });
 }
 function openGame(id, u) {
@@ -195,13 +194,7 @@ function openGame(id, u) {
   g.start($("#g"), { sfx, user: u });
 }
 
-/* ---------- Start ---------- */
-(async () => {
-  const q = new URLSearchParams(location.search);
-  if (q.get("userId") && q.get("secret")) return resetView(q.get("userId"), q.get("secret"));
-  try {
-    const u = await account.get();
-    if (!u.emailVerification) { await account.deleteSession("current"); return signIn(); }
-    u.prefs.avatar ? home(u) : avatarView(u);
-  } catch (e) { signIn(); }
-})();
+/* ---------- Start ----------
+   Accounts are switched off for now: everyone goes straight to the home screen.
+   To turn accounts back on later, replace the line below with the sign-in start code. */
+home({ name: "Player", prefs: { avatar: "🎮" } });
